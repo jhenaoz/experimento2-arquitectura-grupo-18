@@ -1,10 +1,10 @@
-from app import create_app
 from .modelos import db , OrdenCompra
 from flask_restful import Resource, Api
 from flask import Flask,request
 from .vistas import VistaOrdenCompra
 import requests
 import os
+from app import create_app
 
 app = create_app('default')
 app_context = app.app_context()
