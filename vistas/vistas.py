@@ -6,19 +6,36 @@ from flask_jwt_extended import jwt_required, create_access_token
 from datetime import datetime, timedelta
 
 
-class VistaOrdenCompra(Resource):
+class VistaOrdenesCompra(Resource):
+    @jwt_required()
     def post(self):
         nueva_orden = OrdenCompra(
             direccion=request.json['direccion'],
-            vendedor=request.json['vendedor'],
+            vendedor_id=request.json['vendedor_id'],
             detalle_orden=request.json['detalle_orden'],
             estado=request.json['estado']
         )
         db.session.add(nueva_orden)
         db.session.commit()
         return "Orden generada exitosamente", 201
-
-
+    
+class VistaOrdenCompra(Resource):       
+    @jwt_required()
+    def put(self,id_orden,id_usuario):
+        orden = OrdenCompra.query.filter(OrdenCompra.id == id_orden).first()        
+        if (orden.vendedor_id != id_usuario):  
+             return "El usuario no tiene permitido modificar esa compra", 401
+        else:
+            usuario = Usuario.query.filter(Usuario.id == id_usuario).first()          
+            if (usuario is None):
+                return "El usuario no existe", 401
+            orden.direccion = request.json["direccion"]
+            orden.detalle_orden = request.json["detalle_orden"]
+            orden.estado = request.json["estado"]     
+            db.session.add(orden)
+            db.session.commit()      
+            return "Orden actualizada exitosamente", 200
+        
 class VistaSignIn(Resource):
 
     def post(self):
@@ -57,7 +74,11 @@ class ViewLogIn(Resource):
 
         # verificar si la no cuenta esta bloqueda o si ya pasó más de un día del bloqueo actual
         now = datetime.now()
-        difference = datetime.utcnow() - user.blocked_time
+        if user.blocked_time is None:
+            difference = True
+        else:            
+            difference = datetime.utcnow() - user.blocked_time
+
         available = account_blocked != True or difference.days >= 1
 
         if user is not None:

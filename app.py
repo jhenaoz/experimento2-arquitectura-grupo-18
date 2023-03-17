@@ -6,6 +6,7 @@ from flask_jwt_extended import JWTManager
 from flask_restful import Resource, Api
 from modelos import db
 from vistas import VistaOrdenCompra, ViewLogIn, VistaSignIn
+from vistas.vistas import VistaOrdenesCompra
 # from app import create_app
 
 # app = create_app('default')
@@ -23,10 +24,11 @@ api = Api(app)
 db.init_app(app)
 db.create_all()
 
-api.add_resource(VistaOrdenCompra, '/orden')
+api.add_resource(VistaOrdenesCompra, '/orden')
+api.add_resource(VistaOrdenCompra, '/orden/<int:id_orden>/usuario/<int:id_usuario>')
 api.add_resource(VistaSignIn, '/signin')
 api.add_resource(ViewLogIn, '/login')
-
+jwt = JWTManager(app)
 print('Starting server')
 
 
@@ -39,7 +41,7 @@ def ping():
 def fail():
     os._exit(12)
 
-jwt = JWTManager(app)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
