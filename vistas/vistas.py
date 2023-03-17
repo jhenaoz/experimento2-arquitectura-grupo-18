@@ -1,10 +1,15 @@
+import hashlib
 from flask import request
-from ..modelos import db, OrdenCompra
+from modelos import db, OrdenCompra, Usuario, EnumTipoUsuario
 from flask_restful import Resource
+from flask_jwt_extended import jwt_required, create_access_token
+from datetime import datetime, timedelta
+
 
 class VistaOrdenCompra(Resource):
     def post(self):
-        nueva_orden = OrdenCompra(direccion=request.json['direccion'],           
+        nueva_orden = OrdenCompra(
+            direccion=request.json['direccion'],
             vendedor=request.json['vendedor'],
             detalle_orden=request.json['detalle_orden'],
             estado=request.json['estado']
@@ -12,3 +17,95 @@ class VistaOrdenCompra(Resource):
         db.session.add(nueva_orden)
         db.session.commit()
         return "Orden generada exitosamente", 201
+
+
+class VistaSignIn(Resource):
+
+    def post(self):
+        found = Usuario.query.filter(
+            Usuario.username == request.json["username"]).first()
+        if found is None:
+            password_encrypted = hashlib.md5(
+                request.json["password"].encode('utf-8')).hexdigest()
+            new_usuario = Usuario(
+                username=request.json["username"],
+                password=password_encrypted,
+                email=request.json["email"],
+                rol=EnumTipoUsuario.DIRECTOR_COMPRAS.value,
+                login_attempts=0,
+                blocked_account=0
+            )
+            db.session.add(new_usuario)
+            db.session.commit()
+            return {"mensaje": "usuario creado exitosamente", "id": new_usuario.id}
+        else:
+            return "El usuario ya existe", 404
+
+
+class ViewLogIn(Resource):
+    def post(self):
+        password_encrypted = hashlib.md5(
+            request.json["password"].encode('utf-8')).hexdigest()
+
+        user = Usuario.query.filter(
+            Usuario.username == request.json["username"]
+        ).first()
+
+        db.session.commit()
+
+        account_blocked = user.blocked_account
+
+        # verificar si la no cuenta esta bloqueda o si ya pasó más de un día del bloqueo actual
+        now = datetime.now()
+        difference = datetime.utcnow() - user.blocked_time
+        available = account_blocked != True or difference.days >= 1
+
+        if user is not None:
+            if available == True:
+                if user.password == password_encrypted:
+                    # Reiniciar las variables de control de acceso
+                    if account_blocked == True:
+                        user.login_attempts = 0
+                        user.blocked_time = None
+                        user.blocked_account = False
+                        db.session.commit()
+
+                    token_de_acceso = create_access_token(identity=user.id)
+                    return {"mensaje": "Inicio de sesión exitoso", "token": token_de_acceso, "id": user.id, "rol": user.rol.value}
+
+                else:
+                    # Si la cuenta no esta bloqueada aun, debe contar los intentos
+                    if account_blocked == False:
+                        attempts = user.login_attempts or 0
+                        attempts = attempts + 1
+                        user.login_attempts = attempts
+
+                        if attempts == 3:
+                            user.blocked_account = True
+                            user.blocked_time = datetime.today()
+
+                        db.session.commit()
+                    return "Login fallido", 404
+
+            else:
+                return "Cuenta bloqueada", 404
+
+        else:
+            return "El usuario no existe", 404
+class ViewRecover(Resource):
+    def post(self):
+        user = Usuario.query.filter(Usuario.username == request.json["username"]).first()
+        password1 = request.json["password1"]
+        password2 = request.json["password2"]
+        if not user:
+            return "Datos de Usuario No Registrados"
+        if not password1 or not password2:
+            return "Datos de Contraseña no pueden ser vacios"
+        if password1 != password2:
+            return "Contraseñas ingresadas no coindicen"
+        password_encrypted = hashlib.md5(request.json["password1"].encode('utf-8')).hexdigest()
+        user.password = password_encrypted
+        user.login_attempts = 0
+        user.blocked_account = 0
+        db.session.commit()
+        return {"mensaje": "Credenciales restablecidas exitosamente", "Usuario": user.username}
