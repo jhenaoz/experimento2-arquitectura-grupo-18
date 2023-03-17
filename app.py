@@ -5,7 +5,7 @@ from flask import Flask, request
 from flask_jwt_extended import JWTManager
 from flask_restful import Resource, Api
 from modelos import db
-from vistas import VistaOrdenCompra, ViewLogIn, VistaSignIn
+from vistas import VistaOrdenCompra, ViewLogIn, VistaSignIn, ViewRecover
 # from app import create_app
 
 # app = create_app('default')
@@ -26,6 +26,7 @@ db.create_all()
 api.add_resource(VistaOrdenCompra, '/orden')
 api.add_resource(VistaSignIn, '/signin')
 api.add_resource(ViewLogIn, '/login')
+api.add_resource(ViewRecover, '/credenciales')
 
 print('Starting server')
 
