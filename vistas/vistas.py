@@ -114,3 +114,26 @@ class ViewLogIn(Resource):
 
         else:
             return "El usuario no existe", 404
+
+
+class ViewRecover(Resource):
+    def post(self):
+        user = Usuario.query.filter(
+            Usuario.username == request.json["username"]).first()
+        password1 = request.json["password1"]
+        password2 = request.json["password2"]
+
+        if not user:
+            return "Datos de Usuario No Registrados"
+        if not password1 or not password2:
+            return "Datos de Contraseña no pueden ser vacios"
+        if password1 != password2:
+            return "Contraseñas ingresadas no coindicen"
+
+        password_encrypted = hashlib.md5(
+            request.json["password1"].encode('utf-8')).hexdigest()
+        user.password = password_encrypted
+        user.login_attempts = 0
+        user.blocked_account = 0
+        db.session.commit()
+        return {"mensaje": "Credenciales restablecidas exitosamente", "Usuario": user.username}
