@@ -8,10 +8,12 @@ class EnumTipoUsuario(enum.Enum):
     DIRECTOR_COMPRAS: str = 'DIRECTOR_COMPRAS'
     VENDEDOR: str = 'VENDEDOR'
 
+
 class Estado(enum.Enum):
     CREADO = 1,
     PAGADO = 2,
     MORA = 3
+
 
 class OrdenCompra(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -23,8 +25,9 @@ class OrdenCompra(db.Model):
     vendedor = db.relationship(
         'Usuario', back_populates='ordenes')
 
+
 class Usuario(db.Model):
-    id = db.Column(db.Integer, primary_key= True)
+    id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50))
     password = db.Column(db.String(100))
     email = db.Column(db.String(100))

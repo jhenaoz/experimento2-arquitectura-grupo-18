@@ -18,24 +18,26 @@ class VistaOrdenesCompra(Resource):
         db.session.add(nueva_orden)
         db.session.commit()
         return "Orden generada exitosamente", 201
-    
-class VistaOrdenCompra(Resource):       
+
+
+class VistaOrdenCompra(Resource):
     @jwt_required()
-    def put(self,id_orden,id_usuario):
-        orden = OrdenCompra.query.filter(OrdenCompra.id == id_orden).first()        
-        if (orden.vendedor_id != id_usuario):  
-             return "El usuario no tiene permitido modificar esa compra", 401
+    def put(self, id_orden, id_usuario):
+        orden = OrdenCompra.query.filter(OrdenCompra.id == id_orden).first()
+        if (orden.vendedor_id != id_usuario):
+            return "El usuario no tiene permitido modificar esa compra", 401
         else:
-            usuario = Usuario.query.filter(Usuario.id == id_usuario).first()          
+            usuario = Usuario.query.filter(Usuario.id == id_usuario).first()
             if (usuario is None):
                 return "El usuario no existe", 401
             orden.direccion = request.json["direccion"]
             orden.detalle_orden = request.json["detalle_orden"]
-            orden.estado = request.json["estado"]     
+            orden.estado = request.json["estado"]
             db.session.add(orden)
-            db.session.commit()      
+            db.session.commit()
             return "Orden actualizada exitosamente", 200
-        
+
+
 class VistaSignIn(Resource):
 
     def post(self):
@@ -73,10 +75,9 @@ class ViewLogIn(Resource):
         account_blocked = user.blocked_account
 
         # verificar si la no cuenta esta bloqueda o si ya pasó más de un día del bloqueo actual
-        now = datetime.now()
         if user.blocked_time is None:
             difference = True
-        else:            
+        else:
             difference = datetime.utcnow() - user.blocked_time
 
         available = account_blocked != True or difference.days >= 1

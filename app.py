@@ -25,7 +25,8 @@ db.init_app(app)
 db.create_all()
 
 api.add_resource(VistaOrdenesCompra, '/orden')
-api.add_resource(VistaOrdenCompra, '/orden/<int:id_orden>/usuario/<int:id_usuario>')
+api.add_resource(VistaOrdenCompra,
+                 '/orden/<int:id_orden>/usuario/<int:id_usuario>')
 api.add_resource(VistaSignIn, '/signin')
 api.add_resource(ViewLogIn, '/login')
 jwt = JWTManager(app)
@@ -40,7 +41,6 @@ def ping():
 @app.route('/kill-program')
 def fail():
     os._exit(12)
-
 
 
 if __name__ == '__main__':
