@@ -4,6 +4,7 @@ from modelos import db, OrdenCompra, Usuario, EnumTipoUsuario
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, create_access_token
 from datetime import datetime, timedelta
+from google.cloud import pubsub_v1
 
 
 class VistaOrdenesCompra(Resource):
@@ -35,6 +36,22 @@ class VistaOrdenCompra(Resource):
             orden.estado = request.json["estado"]
             db.session.add(orden)
             db.session.commit()
+
+            try:
+                print('SENDING PUB SUB MESSAGE')
+                project_id='logical-codex-378402'
+                topic='experimento-seguridad'
+                publisher = pubsub_v1.PublisherClient()
+                topic_name = 'projects/{project_id}/topics/{topic}'.format(
+                    project_id=project_id,
+                    topic=topic,  # Set this to something appropriate.
+                )
+                future = publisher.publish(topic_name, b'Orden de compra modificada!', spam='eggs')
+                future.result()
+            except Exception as ex:
+                print(ex)
+                print('Error sending message to queue')
+            print('SENDING PUB SUB MESSAGE')                
             return "Orden actualizada exitosamente", 200
 
 
